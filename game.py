@@ -50,25 +50,25 @@ def mat_mul(A,B):
 def mat_translate(tx,ty): return [[1,0,tx],[0,1,ty],[0,0,1]]
 def mat_scale(sx,sy): return [[sx,0,0],[0,sy,0],[0,0,1]]
 def mat_rotate(a):
-    r=math.radians(a); c=math.cos(r); s=math.sin(r)
-    return [[c,-s,0],[s,c,0],[0,0,1]]
+    radianos=math.radians(a); cosseno=math.cos(radianos); seno=math.sin(radianos)
+    return [[cosseno,-seno,0],[seno,cosseno,0],[0,0,1]]
 def mat_shear(shx): return [[1,shx,0],[0,1,0],[0,0,1]]
 def mat_reflect(dir): return [[dir,0,0],[0,1,0],[0,0,1]]
 
-def apply(M,p):
-    x,y=p
-    nx=M[0][0]*x + M[0][1]*y + M[0][2]
-    ny=M[1][0]*x + M[1][1]*y + M[1][2]
+def apply(matriz, pontos):
+    x, y = pontos
+    nx=matriz[0][0]*x + matriz[0][1]*y + matriz[0][2]
+    ny=matriz[1][0]*x + matriz[1][1]*y + matriz[1][2]
     return (nx,ny)
 
 
 def build_player_matrix(p):
-    S = mat_scale(p["scale"], p["scale"])
-    Sh = mat_shear(p["shx"])
-    R = mat_rotate(p["angle"])
-    Rf = mat_reflect(p["direction"])
-    T = mat_translate(p["x"], p["y"])
-    return mat_mul(T, mat_mul(Rf, mat_mul(R, mat_mul(Sh, S))))
+    scale = mat_scale(p["scale"], p["scale"])
+    shear = mat_shear(p["shx"])
+    rotacao = mat_rotate(p["angle"])
+    reflexao = mat_reflect(p["direction"])
+    translacao = mat_translate(p["x"], p["y"])
+    return mat_mul(translacao, mat_mul(reflexao, mat_mul(rotacao, mat_mul(shear, scale))))
 
 
 def reset_player():
@@ -252,14 +252,14 @@ load_level(level)
 
 running=True
 while running:
-    dt=clock.tick(60)/1000  # segundos desde o último frame
+    delta_time = clock.tick(60)/1000  # trava o jogo a 60 FPS
 
-    for e in pygame.event.get():
-        if e.type==pygame.QUIT:
-            running=False
+    for enemy in pygame.event.get():
+        if enemy.type == pygame.QUIT:
+            running = False
 
-        if e.type==pygame.KEYDOWN:
-            if (e.key==pygame.K_SPACE or e.key==pygame.K_UP) and player["on_ground"]:
+        if enemy.type == pygame.KEYDOWN:
+            if (enemy.key == pygame.K_SPACE or enemy.key == pygame.K_UP) and player["on_ground"]:
                 player["vy"] = -580
                 player["on_ground"] = False
                 player["scale"] *= 1.3
@@ -276,14 +276,14 @@ while running:
 
     # Rotação ao pular
     if not player["on_ground"]:
-        player["angle"] += 300 * dt
+        player["angle"] += 300 * delta_time
     else:
         player["angle"] = 0
 
     # Física
-    player["x"] += player["vx"] * dt
-    player["vy"] += 900 * dt
-    player["y"] += player["vy"] * dt
+    player["x"] += player["vx"] * delta_time
+    player["vy"] += 900 * delta_time
+    player["y"] += player["vy"] * delta_time
 
     # Chão
     if player["y"] >= GROUND_Y - 40:
@@ -301,39 +301,39 @@ while running:
             player["scale"] = 1.0
 
     # Plataformas horizontais móveis
-    for mp in moving_platforms:
+    for moving_platform in moving_platforms:
         # movimento baseado em velocidade (pixels/segundo)
-        dx = mp["speed"] * dt * mp["dir"]
-        mp["rect"].x += dx
-        if mp["rect"].x < mp["min"]:
-            mp["rect"].x = mp["min"]
-            mp["dir"] *= -1
-        elif mp["rect"].x + mp["rect"].width > mp["max"]:
-            mp["rect"].x = mp["max"] - mp["rect"].width
-            mp["dir"] *= -1
+        delta_x = moving_platform["speed"] * delta_time * moving_platform["dir"]
+        moving_platform["rect"].x += delta_x
+        if moving_platform["rect"].x < moving_platform["min"]:
+            moving_platform["rect"].x = moving_platform["min"]
+            moving_platform["dir"] *= -1
+        elif moving_platform["rect"].x + moving_platform["rect"].width > moving_platform["max"]:
+            moving_platform["rect"].x = moving_platform["max"] - moving_platform["rect"].width
+            moving_platform["dir"] *= -1
 
         # colisão: se cair sobre a plataforma
-        if mp["rect"].collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
-            player["y"] = mp["rect"].y - 40
+        if moving_platform["rect"].collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
+            player["y"] = moving_platform["rect"].y - 40
             player["vy"] = 0
             player["on_ground"] = True
             player["scale"] = 1.0
             # jogador "pega carona" horizontal
-            player["x"] += dx
+            player["x"] += delta_x
 
     # Plataformas verticais
-    for vp in vertical_platforms:
-        dy = vp["speed"] * dt * vp["dir"]
-        vp["rect"].y += dy
-        if vp["rect"].y < vp["min"]:
-            vp["rect"].y = vp["min"]
-            vp["dir"] *= -1
-        elif vp["rect"].y > vp["max"]:
-            vp["rect"].y = vp["max"]
-            vp["dir"] *= -1
+    for vertical_platform in vertical_platforms:
+        delta_y = vertical_platform["speed"] * delta_time * vertical_platform["dir"]
+        vertical_platform["rect"].y += delta_y
+        if vertical_platform["rect"].y < vertical_platform["min"]:
+            vertical_platform["rect"].y = vertical_platform["min"]
+            vertical_platform["dir"] *= -1
+        elif vertical_platform["rect"].y > vertical_platform["max"]:
+            vertical_platform["rect"].y = vertical_platform["max"]
+            vertical_platform["dir"] *= -1
 
-        if vp["rect"].collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
-            player["y"] = vp["rect"].y - 40
+        if vertical_platform["rect"].collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
+            player["y"] = vertical_platform["rect"].y - 40
             player["vy"] = 0
             player["on_ground"] = True
             player["scale"] = 1.0
@@ -342,17 +342,17 @@ while running:
             # porque o jogador y foi ajustado para ficar "em cima" da plataforma.
 
     # Inimigos
-    for e in enemies:
-        e["rect"].x += e["dir"] * 120 * dt
-        if e["rect"].x < e["min"] or e["rect"].x > e["max"]:
-            e["dir"] *= -1
+    for enemy in enemies:
+        enemy["rect"].x += enemy["dir"] * 120 * delta_time
+        if enemy["rect"].x < enemy["min"] or enemy["rect"].x > enemy["max"]:
+            enemy["dir"] *= -1
 
-        if e["rect"].collidepoint(player["x"], player["y"]):
+        if enemy["rect"].collidepoint(player["x"], player["y"]):
             reset_player()
 
     # Espinhos
-    for s in spikes:
-        if s.collidepoint(player["x"], player["y"]):
+    for spike in spikes:
+        if spike.collidepoint(player["x"], player["y"]):
             reset_player()
 
     # Cair
@@ -377,11 +377,11 @@ while running:
     for plat in platforms:
         pygame.draw.rect(screen,(200,200,200),plat)
 
-    for mp in moving_platforms:
-        pygame.draw.rect(screen,(180,220,255),mp["rect"])
+    for moving_platform in moving_platforms:
+        pygame.draw.rect(screen,(180,220,255),moving_platform["rect"])
 
-    for vp in vertical_platforms:
-        pygame.draw.rect(screen,(255,210,160),vp["rect"])
+    for vertical_platform in vertical_platforms:
+        pygame.draw.rect(screen,(255,210,160),vertical_platform["rect"])
 
     pygame.draw.rect(screen,(80,255,160),portal_rect)
     screen.blit(FONT.render("PORTAL",True,(255,255,255)),(portal_rect.x, portal_rect.y-20))
@@ -390,10 +390,10 @@ while running:
         pygame.draw.polygon(screen,(255,80,80),[(sp.x,sp.y+40),(sp.x+30,sp.y),(sp.x+60,sp.y+40)])
 
     # inimigos
-    for e in enemies:
+    for enemy in enemies:
         shx = math.sin(pygame.time.get_ticks() * 0.005) * 0.6
         enemy_shape = [(-20,-20),(20,-20),(20,20),(-20,20)]
-        M_e = mat_mul(mat_translate(e["rect"].centerx, e["rect"].centery), mat_shear(shx))
+        M_e = mat_mul(mat_translate(enemy["rect"].centerx, enemy["rect"].centery), mat_shear(shx))
         pts_e = [apply(M_e, p) for p in enemy_shape]
         draw_polygon(pts_e,(255,120,120))
 
