@@ -34,6 +34,9 @@ spikes = []
 platforms = []
 enemies = []
 
+# Plataformas móveis (usadas apenas na fase 4)
+moving_platforms = []      # listas de dicts: {"rect", "dir", "min", "max", "speed"}
+vertical_platforms = []    # listas de dicts: {"rect", "dir", "min", "max", "speed"}
 
 # ---------------- MATRIZES ----------------
 def mat_mul(A,B):
@@ -75,9 +78,16 @@ def reset_player():
 
 # ---------------- CARREGAR FASES ----------------
 def load_level(level):
-    global portal_rect, spikes, platforms, enemies
+    global portal_rect, spikes, platforms, enemies, moving_platforms, vertical_platforms
+    # reset containers
+    platforms = []
+    spikes = []
+    enemies = []
+    moving_platforms = []
+    vertical_platforms = []
+
     # -----------------------------------------
-    # ============ FASE 1 (original) ==========
+    # ================ FASE 1 =================
     # -----------------------------------------
     if level == 1:
         portal_rect = pygame.Rect(780, GROUND_Y - 80, 60, 80)
@@ -102,7 +112,7 @@ def load_level(level):
 
 
     # -----------------------------------------
-    # ============ FASE 2 (Acesso difícil) ==========
+    # =============== FASE 2 ==================
     # -----------------------------------------
     elif level == 2:
         portal_rect = pygame.Rect(740, GROUND_Y - 440, 60, 80)
@@ -129,10 +139,6 @@ def load_level(level):
             pygame.Rect(200, GROUND_Y - 150, 150, 20),
             pygame.Rect(420, GROUND_Y - 250, 150, 20),
             pygame.Rect(650, GROUND_Y - 350, 150, 20),
-
-            # acesso ao portal
-            # pygame.Rect(720, GROUND_Y - 200, 140, 20),
-            # pygame.Rect(760, GROUND_Y - 300, 120, 20),
         ]
 
         enemies = [
@@ -143,7 +149,7 @@ def load_level(level):
 
 
     # -----------------------------------------
-    # ============ FASE 3 (desafio extra) ==========
+    # ================ FASE 3 =================
     # -----------------------------------------
     elif level == 3:
         portal_rect = pygame.Rect(200, GROUND_Y - 420, 60, 80)
@@ -172,6 +178,65 @@ def load_level(level):
         ]
 
 
+    # -----------------------------------------
+    # ================ FASE 4 =================
+    # -----------------------------------------
+    elif level == 4:
+        portal_rect = pygame.Rect(70, GROUND_Y - 400, 60, 80)
+
+        spikes = [
+            pygame.Rect(150, GROUND_Y - 40, 60, 40),
+            pygame.Rect(210, GROUND_Y - 40, 60, 40),
+            pygame.Rect(270, GROUND_Y - 40, 60, 40),
+            pygame.Rect(330, GROUND_Y - 40, 60, 40),
+            pygame.Rect(390, GROUND_Y - 40, 60, 40),
+            pygame.Rect(450, GROUND_Y - 40, 60, 40),
+            pygame.Rect(510, GROUND_Y - 40, 60, 40),
+            pygame.Rect(570, GROUND_Y - 40, 60, 40),
+            pygame.Rect(630, GROUND_Y - 40, 60, 40),
+            pygame.Rect(690, GROUND_Y - 40, 60, 40),
+            pygame.Rect(750, GROUND_Y - 40, 60, 40),
+            pygame.Rect(810, GROUND_Y - 40, 60, 40),
+            
+            pygame.Rect(150, GROUND_Y - 390, 60, 40),
+            pygame.Rect(210, GROUND_Y - 390, 60, 40),
+            pygame.Rect(270, GROUND_Y - 390, 60, 40),
+            pygame.Rect(330, GROUND_Y - 390, 60, 40),
+            pygame.Rect(390, GROUND_Y - 390, 60, 40),
+            pygame.Rect(450, GROUND_Y - 390, 60, 40),
+            pygame.Rect(510, GROUND_Y - 390, 60, 40),
+            pygame.Rect(570, GROUND_Y - 390, 60, 40),
+            pygame.Rect(630, GROUND_Y - 390, 60, 40),
+            
+            pygame.Rect(0, GROUND_Y - 290, 60, 40),
+            pygame.Rect(60, GROUND_Y - 290, 60, 40),
+            pygame.Rect(120, GROUND_Y - 290, 60, 40),
+        ]
+
+        # Plataformas horizontais móveis (speed em pixels/segundo)
+        moving_platforms = [
+            {"rect": pygame.Rect(150, GROUND_Y - 100, 120, 20), "dir": 1, "min": 150, "max": 800, "speed": 300},
+            {"rect": pygame.Rect(320, GROUND_Y - 410, 120, 20), "dir": 1, "min": 300, "max": 520, "speed": 70},
+        ]
+
+        # Plataformas verticais
+        vertical_platforms = [
+            {"rect": pygame.Rect(700, GROUND_Y - 240, 120, 20), "dir": 1, "min": GROUND_Y - 460, "max": GROUND_Y - 100, "speed": 100},
+        ]
+
+        # Inimigos posicionados em pontos críticos
+        enemies = [
+            {"rect": pygame.Rect(800, GROUND_Y - 170, 40, 40), "dir": 1, "min": 220, "max": 800},
+            {"rect": pygame.Rect(220, GROUND_Y - 300, 40, 40), "dir": -1, "min": 220, "max": 800},
+        ]
+
+    globals()["platforms"] = platforms
+    globals()["spikes"] = spikes
+    globals()["enemies"] = enemies
+    globals()["moving_platforms"] = moving_platforms
+    globals()["vertical_platforms"] = vertical_platforms
+
+
 # -----------------------------------------------------------------------
 
 def draw_polygon(points, color):
@@ -187,10 +252,10 @@ load_level(level)
 
 running=True
 while running:
-    dt=clock.tick(60)/1000
+    dt=clock.tick(60)/1000  # segundos desde o último frame
 
     for e in pygame.event.get():
-        if e.type==pygame.QUIT: 
+        if e.type==pygame.QUIT:
             running=False
 
         if e.type==pygame.KEYDOWN:
@@ -227,13 +292,54 @@ while running:
         player["on_ground"] = True
         player["scale"] = 1.0
 
-    # Plataformas
+    # Plataformas fixas
     for plat in platforms:
         if plat.collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
             player["y"] = plat.y - 40
             player["vy"] = 0
             player["on_ground"] = True
             player["scale"] = 1.0
+
+    # Plataformas horizontais móveis
+    for mp in moving_platforms:
+        # movimento baseado em velocidade (pixels/segundo)
+        dx = mp["speed"] * dt * mp["dir"]
+        mp["rect"].x += dx
+        if mp["rect"].x < mp["min"]:
+            mp["rect"].x = mp["min"]
+            mp["dir"] *= -1
+        elif mp["rect"].x + mp["rect"].width > mp["max"]:
+            mp["rect"].x = mp["max"] - mp["rect"].width
+            mp["dir"] *= -1
+
+        # colisão: se cair sobre a plataforma
+        if mp["rect"].collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
+            player["y"] = mp["rect"].y - 40
+            player["vy"] = 0
+            player["on_ground"] = True
+            player["scale"] = 1.0
+            # jogador "pega carona" horizontal
+            player["x"] += dx
+
+    # Plataformas verticais
+    for vp in vertical_platforms:
+        dy = vp["speed"] * dt * vp["dir"]
+        vp["rect"].y += dy
+        if vp["rect"].y < vp["min"]:
+            vp["rect"].y = vp["min"]
+            vp["dir"] *= -1
+        elif vp["rect"].y > vp["max"]:
+            vp["rect"].y = vp["max"]
+            vp["dir"] *= -1
+
+        if vp["rect"].collidepoint(player["x"], player["y"] + 40) and player["vy"] >= 0:
+            player["y"] = vp["rect"].y - 40
+            player["vy"] = 0
+            player["on_ground"] = True
+            player["scale"] = 1.0
+            # se a plataforma vertical se mover enquanto o jogador está sobre ela,
+            # o dy já foi aplicado à plataforma; não aplicamos automaticamente ao jogador
+            # porque o jogador y foi ajustado para ficar "em cima" da plataforma.
 
     # Inimigos
     for e in enemies:
@@ -256,7 +362,7 @@ while running:
     # Vitória da fase
     if portal_rect.collidepoint(player["x"], player["y"]):
         level += 1
-        if level > 3:
+        if level > 4:
             print("🏆 VOCÊ ZEROU O JOGO!")
             running = False
         else:
@@ -270,6 +376,12 @@ while running:
 
     for plat in platforms:
         pygame.draw.rect(screen,(200,200,200),plat)
+
+    for mp in moving_platforms:
+        pygame.draw.rect(screen,(180,220,255),mp["rect"])
+
+    for vp in vertical_platforms:
+        pygame.draw.rect(screen,(255,210,160),vp["rect"])
 
     pygame.draw.rect(screen,(80,255,160),portal_rect)
     screen.blit(FONT.render("PORTAL",True,(255,255,255)),(portal_rect.x, portal_rect.y-20))
@@ -285,8 +397,8 @@ while running:
         pts_e = [apply(M_e, p) for p in enemy_shape]
         draw_polygon(pts_e,(255,120,120))
 
-    M = build_player_matrix(player)
-    pts = [apply(M,p) for p in base_shape]
+    matrix = build_player_matrix(player)
+    pts = [apply(matrix, points) for points in base_shape]
     draw_polygon(pts,(200,150,250))
 
     screen.blit(FONT.render(f"FASE {level}", True,(255,255,255)), (20,20))
