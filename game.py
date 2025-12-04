@@ -5,7 +5,7 @@ import sys
 pygame.init()
 WIDTH, HEIGHT = 900, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("GeometricTransformationGame")
+pygame.display.set_caption("Go to the Portal!")
 clock = pygame.time.Clock()
 FONT = pygame.font.SysFont("consolas", 18)
 
